@@ -1,0 +1,10 @@
+node_modules
+build
+dev
+dist
+test
+.idea
+.git
+target
+.DS_Store
+tmp
