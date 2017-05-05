@@ -33,14 +33,15 @@ Object.keys(entries).forEach((item, index) => {
     HtmlWebpack[index] = new HtmlWebpackPlugin({
         // favicon:'./src/img/favicon.ico', //favicon路径
         filename: `./${item}.html`, //生成的html存放路径，相对于 path
-        template: `./src/${item}.html`,
+        template: `./src/template/${item}.html`,
         chunks: chunks,
         inject: true, //允许插件修改哪些内容，包括head与body
         hash: true, //为静态资源生成hash值
         minify: { //压缩HTML文件
-            removeComments: true, //移除HTML中的注释
-            collapseWhitespace: false //删除空白符与换行符
-        }
+            removeComments: productMode, //移除HTML中的注释
+            collapseWhitespace: productMode //删除空白符与换行符
+        },
+        productMode: productMode
     })
 });
 /*1.如果你将应用分开打包到多个 output 文件里（如果你的应用有非常多的
@@ -78,7 +79,8 @@ module.exports = function () {
                 filename: "[name].js"
             },
             //目前最流行的Source Maps选项是cheap-module-eval-source-map，这个工具会帮助开发环境下在Chrome/Firefox中显示源代码文件，其速度快于source-map与eval-source-map：
-            devtool: !productMode ? 'cheap-module-eval-source-map' : 'hidden-source-map',
+            // devtool: !productMode ? 'cheap-module-eval-source-map' : undefined,
+            devtool: !productMode ? "cheap-module-source-map" : undefined,
             devServer: {
                 contentBase: ROOT_PATH,
                 historyApiFallback: true,
@@ -113,9 +115,6 @@ module.exports = function () {
                         }
                     }]
                 }, {
-                    test: /\.html$/, //获取html里面的图片
-                    loader: 'html-loader'
-                }, {
                     //当我们需要读取json格式文件时，我们不再需要安装任何loader，webpack2中将会内置 json-loader，自动支持json格式的读取（喜大普奔啊）。
                     test: /\.json$/, //获取json数据的loader
                     loader: 'json-loader'
@@ -145,21 +144,17 @@ module.exports = function () {
                 }
             },
 
+            plugins: HtmlWebpack.concat(commonPlugin),
+            watch: watchMode,
             externals: {
-                jquery: 'jQuery'
-            },
-
-            plugins: HtmlWebpack.concat(commonPlugin).concat([
-                new webpack.ProvidePlugin({
-                    $: 'jquery',
-                    jQuery: 'jquery',
-                    'window.jQuery': 'jquery',
-                    'window.$': 'jquery' })
-            ]),
-            watch: watchMode
+                // require("jquery") is external and available
+                //  on the global var jQuery
+                "jquery": "jQuery"
+            }
         }
     switch (env) {
         case 'production':
+            console.log('production mode');
             config.plugins = (config.plugins || []).concat([
                 new webpack.DefinePlugin({
                     'process.env': {
